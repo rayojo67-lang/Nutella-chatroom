@@ -1,28 +1,45 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
+// Connect to the server
+const socket = io();
 
-const app = express();
-const server = http.createServer(app);
+// Get page elements
+const messages = document.getElementById("messages");
+const input = document.getElementById("input");
 
-const io = new Server(server);
+// Receive messages
+socket.on("chat", (msg) => {
+    const message = document.createElement("div");
+    message.textContent = msg;
 
-app.use(express.static("public"));
+    messages.appendChild(message);
 
-io.on("connection", (socket) => {
-    console.log("User connected");
-
-    socket.on("chat", (msg) => {
-        io.emit("chat", msg);
-    });
-
-    socket.on("disconnect", () => {
-        console.log("User disconnected");
-    });
+    // Scroll to the newest message
+    messages.scrollTop = messages.scrollHeight;
 });
 
-const PORT = process.env.PORT || 3000;
+// Send a message
+function send() {
+    const text = input.value.trim();
 
-server.listen(PORT, () => {
-    console.log(`Server running on ${PORT}`);
+    if (text === "") return;
+
+    socket.emit("chat", text);
+
+    input.value = "";
+    input.focus();
+}
+
+// Allow Enter key to send messages
+input.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        send();
+    }
+});
+
+// Show connection status in the console
+socket.on("connect", () => {
+    console.log("Connected to server!");
+});
+
+socket.on("disconnect", () => {
+    console.log("Disconnected from server.");
 });
