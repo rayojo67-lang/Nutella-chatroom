@@ -1,159 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;700&display=swap');
-
-        * {
-            font-family: 'Google Sans Code', monospace !important;
-        }
-        /* Maximum Green Palette Adjustments */
-        body { background-color: #166534; overflow: hidden; }
-        .theme-green { background-color: #4ade80; }
-        .theme-green:hover { background-color: #22c55e; }
-        .bg-sidebar { background-color: #14532d; }
-        .bg-nav { background-color: #15803d; }
-        .bg-input-bar { background-color: #15803d; }
-    </style>
+  <title>Chat</title>
 </head>
-<body class="text-green-100 h-screen flex">
+<body>
 
-    <aside id="sidebar" class="w-64 bg-sidebar border-r border-green-700 flex flex-col justify-between transition-all duration-300">
-        <div>
-            <div class="p-4 border-b border-green-700 flex items-center justify-between">
-                <span class="font-bold text-green-300 tracking-wider uppercase text-sm">Rooms</span>
-                <button onclick="createNewRoom()" class="w-8 h-8 rounded-lg border border-green-500 flex items-center justify-center text-green-300 hover:bg-green-800 transition-all font-bold text-xl active:scale-95" title="Add Chat Room">
-                    +
-                </button>
-            </div>
-            
-            <div id="rooms-list" class="p-2 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
-                <button onclick="switchRoom(this)" class="w-full text-left p-3 rounded-xl bg-green-800 border border-green-600 text-green-100 font-bold">
-                    # general
-                </button>
-            </div>
-        </div>
+<div id="messages"></div>
 
-        <div class="p-4 border-t border-green-700">
-            <button onclick="location.reload()" class="w-full text-center text-xs bg-green-900/50 text-green-300 border border-green-600 py-2 rounded-xl hover:bg-green-800 transition-colors">DISCONNECT</button>
-        </div>
-    </aside>
+<input id="input">
+<button onclick="send()">Send</button>
 
-    <main class="flex-1 flex flex-col h-screen relative">
-        <nav class="h-16 border-b border-green-700 flex items-center px-6 bg-nav">
-            <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="w-8 h-8 rounded-lg border border-green-500 flex items-center justify-center font-bold text-green-200 hover:bg-green-600 transition-all" title="Toggle Sidebar">
-                    /
-                </button>
-                <span class="w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]"></span>
-                <span id="current-room-title" class="font-bold text-green-100 uppercase text-lg"># general</span>
-            </div>
-        </nav>
+<script src="/socket.io/socket.io.js"></script>
+<script src="script.js"></script>
 
-        <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-black text-green-200" id="messages">
-            <div class="flex items-start gap-4">
-                <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center font-bold text-green-950">SYS</div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-green-400 underline">Network System</span>
-                        <span class="text-xs text-green-600">Just Now</span>
-                    </div>
-                    <p class="text-green-300/80 mt-1 italic">Room initialization complete. Connection secured.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="p-6 bg-input-bar border-t border-green-700">
-            <div class="max-w-4xl mx-auto flex gap-4">
-                <input type="text" id="message-input" placeholder="Send message..." class="flex-1 bg-green-950 border border-green-600 rounded-xl p-3 focus:outline-none focus:border-green-400 text-green-100 placeholder-green-600">
-                <button onclick="sendMessage()" class="theme-green text-green-950 px-6 rounded-xl font-bold transition-all active:scale-95 border border-green-500">SEND</button>
-            </div>
-        </div>
-    </main>
-
-    <script>
-        // Toggle Sidebar Function
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            if (sidebar.classList.contains('w-64')) {
-                sidebar.classList.remove('w-64');
-                sidebar.classList.add('w-0', 'opacity-0', 'overflow-hidden', 'border-r-0');
-            } else {
-                sidebar.classList.remove('w-0', 'opacity-0', 'overflow-hidden', 'border-r-0');
-                sidebar.classList.add('w-64');
-            }
-        }
-
-        // Send message function
-        function sendMessage() {
-            const input = document.getElementById('message-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const messagesContainer = document.getElementById('messages');
-            const messageElement = document.createElement('div');
-            messageElement.className = "flex items-start gap-4";
-            messageElement.innerHTML = `
-                <div class="w-10 h-10 rounded-full bg-green-800 flex items-center justify-center font-bold text-green-300">U</div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-green-400">User</span>
-                        <span class="text-xs text-green-600">Just Now</span>
-                    </div>
-                    <p class="text-white mt-1">${text}</p>
-                </div>
-            `;
-            
-            messagesContainer.appendChild(messageElement);
-            input.value = '';
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        document.getElementById('message-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        function createNewRoom() {
-            const roomName = prompt("Enter new room name:");
-            if (!roomName) return;
-            
-            const cleanName = roomName.toLowerCase().replace(/\s+/g, '-');
-            
-            const roomsList = document.getElementById('rooms-list');
-            const newRoomButton = document.createElement('button');
-            newRoomButton.onclick = function() { switchRoom(this); };
-            newRoomButton.className = "w-full text-left p-3 rounded-xl hover:bg-green-800/60 text-green-300 transition-colors";
-            newRoomButton.innerText = `# ${cleanName}`;
-            
-            roomsList.appendChild(newRoomButton);
-        }
-
-        function switchRoom(element) {
-            const buttons = document.querySelectorAll('#rooms-list button');
-            buttons.forEach(btn => {
-                btn.className = "w-full text-left p-3 rounded-xl hover:bg-green-800/60 text-green-300 transition-colors";
-            });
-
-            element.className = "w-full text-left p-3 rounded-xl bg-green-800 border border-green-600 text-green-100 font-bold";
-            document.getElementById('current-room-title').innerText = element.innerText;
-            
-            document.getElementById('messages').innerHTML = `
-                <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center font-bold text-green-950">SYS</div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-green-400 underline">Network System</span>
-                            <span class="text-xs text-green-600">Just Now</span>
-                        </div>
-                        <p class="text-green-300/80 mt-1 italic">Switched to room ${element.innerText}. All data streams synchronized securely.</p>
-                    </div>
-                </div>
-            `;
-        }
-    </script>
 </body>
 </html>
