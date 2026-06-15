@@ -1,66 +1,24 @@
-// Connect to server
 const socket = io();
 
-// Get elements
 const messages = document.getElementById("messages");
-const input = document.getElementById("message-input");
+const input = document.getElementById("input");
 
-/* =========================
-   LOAD OLD MESSAGES
-========================= */
-socket.on("loadMessages", (msgs) => {
-    msgs.forEach((m) => {
-        addMessage(m.user, m.text);
-    });
+socket.on("chat", (msg) => {
+  const div = document.createElement("div");
+  div.textContent = msg;
+  messages.appendChild(div);
 });
 
-/* =========================
-   RECEIVE NEW MESSAGE
-========================= */
-socket.on("chat", (data) => {
-    addMessage(data.user, data.text);
-});
+function send() {
+  const text = input.value.trim();
+  if (!text) return;
 
-/* =========================
-   SEND MESSAGE
-========================= */
-function sendMessage() {
-    const text = input.value.trim();
-    if (!text) return;
-
-    socket.emit("chat", text);
-
-    input.value = "";
-    input.focus();
+  socket.emit("chat", text);
+  input.value = "";
 }
 
-/* =========================
-   DISPLAY MESSAGE
-========================= */
-function addMessage(user, text) {
-    const div = document.createElement("div");
-    div.className = "flex items-start gap-4";
-
-    div.innerHTML = `
-        <div class="w-10 h-10 rounded-full bg-green-800 flex items-center justify-center font-bold text-green-300">
-            ${user ? user[0] : "U"}
-        </div>
-
-        <div>
-            <span class="font-bold text-green-400">${user}</span>
-            <p class="text-white">${text}</p>
-        </div>
-    `;
-
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
-}
-
-/* =========================
-   ENTER KEY SUPPORT
-========================= */
 input.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-        sendMessage();
-    }
+  if (e.key === "Enter") {
+    send();
+  }
 });
